@@ -1,7 +1,9 @@
 [package]
-name = "rust-vdm"
-version = "0.1.0"
+name = "vdm"
+version = "1.0.0"
 edition = "2021"
+description = "A *hopefully* simple rust package that makes vdm parsing and viewing as easy as possible for source engine games."
+license = "MIT OR Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
