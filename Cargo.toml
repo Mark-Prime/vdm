@@ -1,6 +1,6 @@
 [package]
 name = "vdm"
-version = "1.0.0"
+version = "1.0.1"
 edition = "2021"
 description = "A *hopefully* simple rust package that makes vdm parsing and viewing as easy as possible for source engine games."
 license = "MIT OR Apache-2.0"
