@@ -1,4 +1,4 @@
-use std::{array, fmt::{Display, Formatter, self}};
+use std::{fmt::{Display, Formatter, self}};
 use regex::{Regex, CaptureMatches};
 
 #[derive(Debug, Clone)]
@@ -74,7 +74,8 @@ pub struct Properties {
     pub start_time: Option<f64>,
     pub stop_tick: Option<i64>,
     pub stop_time: Option<f64>,
-    pub skip_to_tick: i64,
+    pub skip_to_tick: Option<i64>,
+    pub skip_to_time: Option<f64>,
     pub track: i64,
     pub spline: bool,
     pub stayout: bool,
@@ -106,7 +107,8 @@ impl Properties {
             start_time: None,
             stop_tick: None,
             stop_time: None,
-            skip_to_tick: 0,
+            skip_to_tick: None,
+            skip_to_time: None,
             track: 0,
             spline: false,
             stayout: false,
@@ -131,8 +133,80 @@ impl Properties {
         }
     }
 
-    fn shift(&mut self, adjustment: i64) {
+    fn shift_by_tick(&mut self, adjustment: i64) {
+        if adjustment == 0 { return; }
 
+        if self.start_tick.is_some() {
+            self.start_tick = Some(self.start_tick.unwrap() + adjustment);
+
+            if self.start_tick.unwrap() < 0 {
+                self.start_tick = None;
+            }
+        } else if adjustment > 0 {
+            self.start_tick = Some(adjustment)
+        }
+
+        if self.start_time.is_some() {
+            self.start_time = Some(self.start_time.unwrap() + (adjustment as f64 / 66.0));
+
+            if self.start_time.unwrap() < 0.0 {
+                self.start_time = None;
+            }
+        }
+
+        if self.skip_to_tick.is_some() {
+            self.skip_to_tick = Some(self.skip_to_tick.unwrap() + adjustment);
+        }
+
+        if self.skip_to_time.is_some() {
+            self.skip_to_time = Some(self.skip_to_time.unwrap() + (adjustment as f64 / 66.0));   
+        }
+
+        if self.skip_to_time.unwrap() < 0.0 {
+            self.skip_to_time = None;
+        }
+
+        if self.skip_to_tick.unwrap() < 0 {
+            self.skip_to_tick = None;
+        }
+    }
+
+    fn shift_by_time(&mut self, adjustment: f64) {
+        if adjustment == 0.0 { return; }
+
+        if self.start_tick.is_some() {
+            self.start_tick = Some(self.start_tick.unwrap() + (adjustment * 66.0) as i64);
+
+            if self.start_tick.unwrap() < 0 {
+                self.start_tick = None;
+            }
+        }
+
+        if self.start_time.is_some() {
+            self.start_time = Some(self.start_time.unwrap() + adjustment);
+
+            if self.start_time.unwrap() < 0.0 {
+                self.start_time = None;
+            }
+        } else if adjustment > 0.0 {
+            self.start_time = Some(adjustment)
+        }
+
+        if self.skip_to_tick.is_some() {
+            self.skip_to_tick = Some(self.start_tick.unwrap() + (adjustment * 66.0) as i64);
+        }
+
+        if self.skip_to_time.is_some() {
+            self.skip_to_time = Some(self.skip_to_time.unwrap() + adjustment);
+        }
+
+        if self.skip_to_time.unwrap() < 0.0 {
+            self.skip_to_time = None;
+        }
+
+        if self.skip_to_tick.unwrap() < 0 {
+            self.skip_to_tick = None;
+        }
     }
 }
 
@@ -147,7 +221,8 @@ impl From<CaptureMatches<'_, '_>> for Properties {
                 "name" => { property.name = prop[2].to_string(); },
                 "starttime" => {property.start_time = Some(prop[2].parse::<f64>().unwrap());}
                 "starttick" => { property.start_tick = Some(prop[2].parse::<i64>().unwrap()); },
-                "skiptotick" => { property.skip_to_tick = prop[2].parse::<i64>().unwrap(); },
+                "skiptotick" => { property.skip_to_tick = Some(prop[2].parse::<i64>().unwrap()); },
+                "skiptotime" => { property.skip_to_time = Some(prop[2].parse::<f64>().unwrap()); },
                 "stoptick" => { property.stop_tick = Some(prop[2].parse::<i64>().unwrap()); },
                 "stoptime" => { property.stop_time = Some(prop[2].parse::<f64>().unwrap()); },
                 "track" => { property.track = prop[2].parse::<i64>().unwrap(); },
@@ -235,7 +310,7 @@ impl Action {
     }
 
     pub fn props(&self) -> Properties{
-        return match self {
+        match self {
             Action::SkipAhead(props) => {  return props.clone(); },
             Action::StopPlayback(props) => { return props.clone(); },
             Action::PlayCommands(props) => { return props.clone(); },
@@ -245,9 +320,8 @@ impl Action {
             Action::PlaySoundStart(props) => { return props.clone(); },
             Action::Pause(props) => { return props.clone(); },
             Action::ChangePlaybackRate(props) => { return props.clone(); },
-            Action::ZoomFov(props) => { return props.clone(); },
-            _ => { todo!(); }
-        };
+            Action::ZoomFov(props) => { return props.clone(); }
+        }
     }
 
     pub fn set_props(&mut self, new_props: Properties) -> Self {
@@ -262,7 +336,6 @@ impl Action {
             Action::Pause(_) => { Action::Pause(new_props) },
             Action::ChangePlaybackRate(_) => { Action::ChangePlaybackRate(new_props) },
             Action::ZoomFov(_) => { Action::ZoomFov(new_props) },
-            _ => { todo!(); }
         };
     }
 }
@@ -293,7 +366,7 @@ impl From<String> for Action {
 
 impl From<Action> for String {
     fn from(action: Action) -> Self {
-        return match action {
+        match action {
             Action::SkipAhead(props) => { 
                 let mut action_str = "\t\tfactory \"SkipAhead\"\r\n".to_string();
 
@@ -307,7 +380,13 @@ impl From<Action> for String {
                     action_str = format!("{}\t\tstarttime \"{:.3}\"\r\n", action_str, props.start_time.unwrap());
                 }
 
-                action_str = format!("{}\t\tskiptotick \"{}\"\r\n", action_str, props.skip_to_tick);
+                if props.skip_to_tick.is_some() {
+                    action_str = format!("{}\t\tskiptotick \"{}\"\r\n", action_str, props.skip_to_tick.unwrap());
+                }
+
+                if props.skip_to_time.is_some() {
+                    action_str = format!("{}\t\tskiptotime \"{:.3}\"\r\n", action_str, props.skip_to_time.unwrap());
+                }
 
                 return action_str; 
             },
@@ -507,8 +586,7 @@ impl From<Action> for String {
                 action_str = format!("{}\t\tfovhold \"{:.6}\"\r\n", action_str, props.hold_time);
 
                 return action_str; 
-            },
-            _ => { todo!(); }
+            }
         }
     }
 }

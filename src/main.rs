@@ -1,28 +1,22 @@
-#![allow(unused)] // Comment this out before committing/publishing
 mod action;
 
 use action::{Action, Properties};
-use core::fmt;
-use std::{fs, path::{self, Path}, io::Write};
-use regex::{Regex, CaptureMatches};
+use std::{fs, io::Write};
+use regex::{Regex};
 
 #[derive(Debug, Clone)]
 pub struct VDM {
-    pub demo_name: String,
-    file_path: String,
     pub actions: Vec<Action>
 }
 
 impl VDM {
     fn new() -> Self {
         VDM {
-            demo_name: "".to_string(),
-            file_path: "".to_string(),
             actions: vec![]
         }
     }
 
-    fn open(file_path: String) -> Result<VDM, &'static str> {
+    fn open(file_path: &str) -> Result<VDM, &'static str> {
         if file_path.ends_with(".vdm") {
             let file;
             match fs::read_to_string(&file_path) {
@@ -34,19 +28,16 @@ impl VDM {
                 }
             };
 
-            let mut vdm = VDM::from(file);
-            vdm.set_name(path::Path::new(&file_path).file_name().unwrap().to_owned().to_string_lossy().to_string());
-            vdm.set_path(file_path);
-    
+            let vdm = VDM::from(file);
             return Ok(vdm);
         }
 
         Err("Invalid file type")
     }
 
-    fn export(&self, file_path: String) {
+    fn export(&self, file_path: &str) {
         let mut vdm_file = fs::File::create(file_path).unwrap();
-        vdm_file.write_all(self.to_string().as_bytes());
+        vdm_file.write_all(self.to_string().as_bytes()).unwrap();
     }
 
     fn to_string(&self) -> String {
@@ -56,14 +47,6 @@ impl VDM {
         }
 
         return format!("demoactions\r\n{{\r\n{}}}\r\n", vdm_str);
-    }
-
-    fn set_name(&mut self, new_name: String) {
-        self.demo_name = new_name;
-    }
-
-    fn set_path(&mut self, new_path: String) {
-        self.file_path = new_path;
     }
 
     fn add(&mut self, action: Action) {
@@ -76,7 +59,16 @@ impl VDM {
         return self.last()
     }
 
+    fn remove_first(&mut self) {
+        self.actions.remove(0);
+    }
+
     fn remove(&mut self, i:usize) {
+        self.actions.remove(i);
+    }
+
+    fn remove_last(&mut self) {
+        let i = self.len() - 1;
         self.actions.remove(i);
     }
 
@@ -100,7 +92,7 @@ impl VDM {
         self.actions[0] = new_action;
     }
 
-    fn set_nth(&mut self, new_action: Action, i: usize) {
+    fn set_nth(&mut self, i: usize, new_action: Action) {
         self.actions[i] = new_action;
     }
 
@@ -113,7 +105,7 @@ impl VDM {
         self.actions[0] = self.actions[0].set_props(new_props);
     }
 
-    fn set_nth_props(&mut self, new_props: Properties, i: usize) {
+    fn set_nth_props(&mut self, i: usize, new_props: Properties) {
         self.actions[i] = self.actions[i].set_props(new_props);
     }
 
@@ -128,9 +120,9 @@ impl From<String> for VDM {
         let mut vdm_actions = vec![];
 
         let re = Regex::new(r"demoactions\r\n\{\r\n((.|\r\n)*)\r\n\}").unwrap();
-        let mut actions = re.captures(&file_text).unwrap();
+        let actions = re.captures(&file_text).unwrap();
 
-        let mut actions_split = &actions[1].split("}");
+        let actions_split = &actions[1].split("}");
 
         for event in actions_split.to_owned() {
             let main_body = event.split("{").collect::<Vec<_>>();
@@ -140,8 +132,6 @@ impl From<String> for VDM {
         }
 
         VDM {
-            demo_name: "".to_string(),
-            file_path: "".to_string(),
             actions: vdm_actions
         }
     }
@@ -159,14 +149,16 @@ impl From<VDM> for String {
 } 
 
 fn main() {
-    // let mut vdm = VDM::open("./test.vdm".to_string()).unwrap();
+    let mut vdm = VDM::new();
 
+    // create_action() always create the action at the end, we don't need to save it because it's easy to access later.
+    let mut props = vdm.create_action("SkipAhead").props();
 
-    // let mut action_props =  vdm.create_action("ZoomFov").props();
-    // action_props.start_tick = Some(150);
-    // vdm.set_last_props(action_props);
+    props.name = "Skip 5 seconds in".to_string();
+    props.skip_to_time = Some(5.0);
 
-    // println!("{:?}", vdm.clone().last());
+    // We can set the props of a specific action directly without having to modify the action first.
+    vdm.set_last_props(props);
 
-    // vdm.export("output.vdm".to_string());
+    vdm.export("example.vdm");
 }
