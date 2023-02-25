@@ -146,19 +146,4 @@ impl From<VDM> for String {
 
         return format!("demoactions\r\n{{\r\n{}}}\r\n", vdm_str);
     }
-} 
-
-fn main() {
-    let mut vdm = VDM::new();
-
-    // create_action() always create the action at the end, we don't need to save it because it's easy to access later.
-    let mut props = vdm.create_action("SkipAhead").props();
-
-    props.name = "Skip 5 seconds in".to_string();
-    props.skip_to_time = Some(5.0);
-
-    // We can set the props of a specific action directly without having to modify the action first.
-    vdm.set_last_props(props);
-
-    vdm.export("example.vdm");
 }
