@@ -1,3 +1,4 @@
+#![allow(unused)] // Make it stop!
 mod action;
 
 use action::{Action, Properties};
