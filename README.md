@@ -37,7 +37,7 @@ However, this would result in a blank .vdm file. Instead, let's add a new action
 let mut vdm = VDM::new();
 
 // This will create a new action and automatically append it to the vdm.
-let mut action = vdm.create_action("SkipAhead");
+let mut action = vdm.create_action(ActionType::SkipAhead);
 
 // Gather the props from the action to edit them.
 let mut props = action.props();
@@ -63,13 +63,12 @@ This is rather verbose, but we can shorten it quite a bit by knowing what we wan
 let mut vdm = VDM::new();
 
 // create_action() always create the action at the end, we don't need to save it because it's easy to access later.
-let mut props = vdm.create_action("SkipAhead").props();
+let mut props = vdm.create_action(ActionType::SkipAhead).props_mut();
 
+// Since we used .props_mut() we can directly edit the Action without needing to set anything after.
+// Set is available if you want to completely replace an Action or its properties with .set_nth_props()
 props.name = "Skip 5 seconds in".to_string();
 props.skip_to_time = Some(5.0);
-
-// We can set the props of a specific action directly without having to modify the action first.
-vdm.set_last_props(props);
 
 vdm.export("example.vdm");
 ```
@@ -109,6 +108,21 @@ props.start_tick = Some(100);
 // You could also use vdm.set_nth_props(0, props);
 vdm.set_first_props(props);
 
+vdm.export("example.vdm");
+```
+
+Alternatively, we could also borrow it as mutable using .first_mut() and .props_mut() which cuts it down even further.
+
+```rust
+let mut vdm = VDM::open("example.vdm").unwrap();
+// Grab the first actions properties as mutable.
+let mut props = vdm.first_mut().props_mut();
+
+// This sets the starting point 100 game ticks into the demo
+// 66 ticks = 1 second
+props.start_tick = Some(500);
+
+// export without needing to set anything.
 vdm.export("example.vdm");
 ```
 

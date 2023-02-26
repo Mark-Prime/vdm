@@ -1,29 +1,27 @@
 #![allow(unused)] // Make it stop!
-mod action;
+pub mod action;
 
-use action::{Action, Properties};
+use action::{Action, ActionType, Properties};
+use regex::Regex;
 use std::{fs, io::Write};
-use regex::{Regex};
 
 #[derive(Debug, Clone)]
 pub struct VDM {
-    pub actions: Vec<Action>
+    pub actions: Vec<Action>,
 }
 
 impl VDM {
-    fn new() -> Self {
-        VDM {
-            actions: vec![]
-        }
+    pub fn new() -> Self {
+        VDM { actions: vec![] }
     }
 
-    fn open(file_path: &str) -> Result<VDM, &'static str> {
+    pub fn open(file_path: &str) -> Result<VDM, &'static str> {
         if file_path.ends_with(".vdm") {
             let file;
             match fs::read_to_string(&file_path) {
                 Ok(f) => {
                     file = f;
-                },
+                }
                 Err(_) => {
                     return Err("Error Opening File.");
                 }
@@ -36,81 +34,99 @@ impl VDM {
         Err("Invalid file type")
     }
 
-    fn export(&self, file_path: &str) {
+    pub fn export(&self, file_path: &str) {
         let mut vdm_file = fs::File::create(file_path).unwrap();
         vdm_file.write_all(self.to_string().as_bytes()).unwrap();
     }
 
-    fn to_string(&self) -> String {
+    pub fn to_string(&self) -> String {
         let mut vdm_str = "".to_string();
         for (i, action) in self.actions.iter().enumerate() {
-            vdm_str.push_str(&format!("\t\"{}\"\r\n\t{{\r\n{}\t}}\r\n", i + 1, String::from(action.to_owned())));
+            vdm_str.push_str(&format!(
+                "\t\"{}\"\r\n\t{{\r\n{}\t}}\r\n",
+                i + 1,
+                String::from(action.to_owned())
+            ));
         }
 
         return format!("demoactions\r\n{{\r\n{}}}\r\n", vdm_str);
     }
 
-    fn add(&mut self, action: Action) {
+    pub fn add(&mut self, action: Action) {
         self.actions.push(action)
     }
 
-    fn create_action(&mut self, factory: &str) -> Action {
+    pub fn create_action(&mut self, factory: ActionType) -> &mut Action {
         let new_action = Action::new(factory);
         self.add(new_action);
-        return self.last()
+        self.last_mut()
     }
 
-    fn remove_first(&mut self) {
+    pub fn remove_first(&mut self) {
         self.actions.remove(0);
     }
 
-    fn remove(&mut self, i:usize) {
+    pub fn remove(&mut self, i: usize) {
         self.actions.remove(i);
     }
 
-    fn remove_last(&mut self) {
+    pub fn remove_last(&mut self) {
         let i = self.len() - 1;
         self.actions.remove(i);
     }
 
-    fn len(&self) -> usize {
-        return self.actions.len()
+    pub fn len(&self) -> usize {
+        self.actions.len()
     }
 
-    fn first(&self) -> Action {
-        self.actions[0].clone()
+    pub fn first(&self) -> &Action {
+        &self.actions[0]
     }
 
-    fn nth(&self, i: usize) -> Action {
-        self.actions[i].clone()
+    pub fn nth(&self, i: usize) -> &Action {
+        &self.actions[i]
     }
 
-    fn last(&self) -> Action {
-        self.actions[self.len() - 1].clone()
+    pub fn last(&self) -> &Action {
+        let i = self.len() - 1;
+        &self.actions[i]
     }
 
-    fn set_first(&mut self, new_action: Action) {
+    pub fn first_mut(&mut self) -> &mut Action {
+        &mut self.actions[0]
+    }
+
+    pub fn nth_mut(&mut self, i: usize) -> &mut Action {
+        &mut self.actions[i]
+    }
+
+    pub fn last_mut(&mut self) -> &mut Action {
+        let i = self.len() - 1;
+        &mut self.actions[i]
+    }
+
+    pub fn set_first(&mut self, new_action: Action) {
         self.actions[0] = new_action;
     }
 
-    fn set_nth(&mut self, i: usize, new_action: Action) {
+    pub fn set_nth(&mut self, i: usize, new_action: Action) {
         self.actions[i] = new_action;
     }
 
-    fn set_last(&mut self, new_action: Action) {
+    pub fn set_last(&mut self, new_action: Action) {
         let i = self.len() - 1;
         self.actions[i] = new_action;
     }
 
-    fn set_first_props(&mut self, new_props: Properties) {
+    pub fn set_first_props(&mut self, new_props: Properties) {
         self.actions[0] = self.actions[0].set_props(new_props);
     }
 
-    fn set_nth_props(&mut self, i: usize, new_props: Properties) {
+    pub fn set_nth_props(&mut self, i: usize, new_props: Properties) {
         self.actions[i] = self.actions[i].set_props(new_props);
     }
 
-    fn set_last_props(&mut self, new_props: Properties) {
+    pub fn set_last_props(&mut self, new_props: Properties) {
         let i = self.len() - 1;
         self.actions[i] = self.actions[i].set_props(new_props);
     }
@@ -133,7 +149,7 @@ impl From<String> for VDM {
         }
 
         VDM {
-            actions: vdm_actions
+            actions: vdm_actions,
         }
     }
 }
@@ -142,7 +158,11 @@ impl From<VDM> for String {
     fn from(vdm: VDM) -> Self {
         let mut vdm_str = "".to_string();
         for (i, action) in vdm.actions.iter().enumerate() {
-            vdm_str.push_str(&format!("\t\"{}\"\r\n\t{{\r\n{}\t}}\r\n", i + 1, String::from(action.to_owned())));
+            vdm_str.push_str(&format!(
+                "\t\"{}\"\r\n\t{{\r\n{}\t}}\r\n",
+                i + 1,
+                String::from(action.to_owned())
+            ));
         }
 
         return format!("demoactions\r\n{{\r\n{}}}\r\n", vdm_str);

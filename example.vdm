@@ -1,0 +1,9 @@
+demoactions
+{
+	"1"
+	{
+		factory "SkipAhead"
+		name "Skip 5 seconds in"
+		skiptotime "5.000"
+	}
+}
