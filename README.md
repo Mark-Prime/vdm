@@ -15,7 +15,7 @@ Add this to your `Cargo.toml`
 
 ```
 [dependencies]
-vdm = "1.0.3"
+vdm = "1"
 ```
 
 ### Examples

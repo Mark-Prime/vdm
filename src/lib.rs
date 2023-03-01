@@ -75,6 +75,10 @@ impl VDM {
         self.actions.remove(i);
     }
 
+    pub fn clear(&mut self) {
+        self.actions = vec![];
+    }
+
     pub fn len(&self) -> usize {
         self.actions.len()
     }

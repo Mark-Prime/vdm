@@ -84,7 +84,7 @@ pub struct Properties {
 }
 
 impl Properties {
-    fn new() -> Self {
+    pub fn new() -> Self {
         Properties {
             name: "Unnamed".to_string(),
             start_tick: None,
@@ -117,7 +117,7 @@ impl Properties {
         }
     }
 
-    fn shift_by_tick(&mut self, adjustment: i64) {
+    pub fn shift_by_tick(&mut self, adjustment: i64) {
         if adjustment == 0 {
             return;
         }
@@ -148,16 +148,16 @@ impl Properties {
             self.skip_to_time = Some(self.skip_to_time.unwrap() + (adjustment as f64 / 66.0));
         }
 
-        if self.skip_to_time.unwrap() < 0.0 {
+        if self.skip_to_time.is_some() && self.skip_to_time.unwrap() < 0.0 {
             self.skip_to_time = None;
         }
 
-        if self.skip_to_tick.unwrap() < 0 {
+        if self.skip_to_tick.is_some() && self.skip_to_tick.unwrap() < 0 {
             self.skip_to_tick = None;
         }
     }
 
-    fn shift_by_time(&mut self, adjustment: f64) {
+    pub fn shift_by_time(&mut self, adjustment: f64) {
         if adjustment == 0.0 {
             return;
         }
