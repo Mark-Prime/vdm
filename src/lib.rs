@@ -8,11 +8,15 @@ use std::{fs, io::Write};
 #[derive(Debug, Clone)]
 pub struct VDM {
     pub actions: Vec<Action>,
+    pub name: String
 }
 
 impl VDM {
     pub fn new() -> Self {
-        VDM { actions: vec![] }
+        VDM { 
+            actions: vec![],
+            name: String::new()
+        }
     }
 
     pub fn open(file_path: &str) -> Result<VDM, &'static str> {
@@ -27,7 +31,10 @@ impl VDM {
                 }
             };
 
-            let vdm = VDM::from(file);
+            let mut vdm = VDM::from(file);
+            let mut file_name = file_path.split("/").last().unwrap();
+            vdm.name = file_name[..file_name.len() - 4].to_string();
+
             return Ok(vdm);
         }
 
@@ -154,6 +161,7 @@ impl From<String> for VDM {
 
         VDM {
             actions: vdm_actions,
+            name: String::new()
         }
     }
 }
