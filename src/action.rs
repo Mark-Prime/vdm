@@ -588,7 +588,7 @@ impl From<Action> for String {
 
                 write!(
                     &mut action_str,
-                    "\t\tcommands \"{:.6}\"\r\n",
+                    "\t\tcommands \"{}\"\r\n",
                     props.commands
                 );
 
