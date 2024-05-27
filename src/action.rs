@@ -2,33 +2,6 @@ use regex::{CaptureMatches, Regex};
 use std::fmt::{self, Display, Formatter, Write};
 
 #[derive(Debug, Clone)]
-pub enum Fade {
-    FadeIn,
-    FadeOut,
-    Modulate,
-    StayOut,
-    Purge,
-}
-
-impl Display for Fade {
-    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string())
-    }
-}
-
-impl From<Fade> for String {
-    fn from(fade: Fade) -> Self {
-        match fade {
-            Fade::FadeIn => "FFADE_IN \"1\"".to_string(),
-            Fade::FadeOut => "FFADE_OUT \"1\"".to_string(),
-            Fade::Modulate => "FFADE_MODULATE \"1\"".to_string(),
-            Fade::StayOut => "FFADE_STAYOUT \"1\"".to_string(),
-            Fade::Purge => "FFADE_PURGE \"1\"".to_string(),
-        }
-    }
-}
-
-#[derive(Debug, Clone)]
 pub enum TextEffect {
     Flicker,
     FadeInOut,
@@ -77,7 +50,11 @@ pub struct Properties {
     pub font: String,
     pub commands: String,
     pub effect: TextEffect,
-    pub fade: Fade,
+    pub fade_in_enabled: bool,
+    pub fade_out_enabled: bool,
+    pub modulate_enabled: bool,
+    pub stay_out_enabled: bool,
+    pub purge_enabled: bool,
     pub xy: [f64; 2],
     pub rgba1: [u8; 4],
     pub rgba2: [u8; 4],
@@ -109,7 +86,11 @@ impl Properties {
             fade_out: 0.0,
             fx_time: 0.0,
             effect: TextEffect::FadeInOut,
-            fade: Fade::FadeIn,
+            fade_in_enabled: false,
+            fade_out_enabled: false,
+            modulate_enabled: false,
+            stay_out_enabled: false,
+            purge_enabled: false,
             xy: [0.0, 0.0],
             rgba1: [0, 0, 0, 0],
             rgba2: [0, 0, 0, 0],
@@ -329,19 +310,19 @@ impl From<CaptureMatches<'_, '_>> for Properties {
                     property.rgba2[3] = prop[2].parse::<u8>().unwrap();
                 }
                 "FFADE_IN" => {
-                    property.fade = Fade::FadeIn;
+                    property.fade_in_enabled = true;
                 }
                 "FFADE_OUT" => {
-                    property.fade = Fade::FadeOut;
+                    property.fade_out_enabled = true;
                 }
                 "FFADE_MODULATE" => {
-                    property.fade = Fade::Modulate;
+                    property.modulate_enabled = true;
                 }
                 "FFADE_STAYOUT" => {
-                    property.fade = Fade::StayOut;
+                    property.stay_out_enabled = true;
                 }
                 "FFADE_PURGE" => {
-                    property.fade = Fade::Purge;
+                    property.purge_enabled = true;
                 }
                 "FLICKER" => {
                     property.effect = TextEffect::Flicker;
@@ -620,12 +601,33 @@ impl From<Action> for String {
                     "\t\tduration \"{:.3}\"\r\n",
                     props.duration
                 );
+
                 write!(
                     &mut action_str,
                     "\t\tholdtime \"{:.3}\"\r\n",
                     props.hold_time
                 );
-                write!(&mut action_str, "\t\t{}\r\n", String::from(props.fade));
+                
+                if props.fade_in_enabled {
+                    write!(&mut action_str, "\t\tFFADE_IN \"1\"\r\n");
+                }
+
+                if props.fade_out_enabled {
+                    write!(&mut action_str, "\t\tFFADE_OUT \"1\"\r\n");
+                }
+
+                if props.modulate_enabled {
+                    write!(&mut action_str, "\t\tFFADE_MODULATE \"1\"\r\n");
+                }
+
+                if props.stay_out_enabled {
+                    write!(&mut action_str, "\t\tFFADE_STAYOUT \"1\"\r\n");
+                }
+
+                if props.purge_enabled {
+                    write!(&mut action_str, "\t\tFFADE_PURGE \"1\"\r\n");
+                }
+
                 write!(&mut action_str, "\t\tr \"{}\"\r\n", props.rgba1[0]);
                 write!(&mut action_str, "\t\tg \"{}\"\r\n", props.rgba1[1]);
                 write!(&mut action_str, "\t\tb \"{}\"\r\n", props.rgba1[2]);
