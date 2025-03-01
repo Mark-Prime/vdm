@@ -148,7 +148,9 @@ impl From<String> for VDM {
         let mut vdm_actions = vec![];
 
         let re = Regex::new(r"demoactions\r\n\{\r\n((.|\r\n)*)\r\n\}").unwrap();
-        let actions = re.captures(&file_text).unwrap();
+        let Some(actions) = re.captures(&file_text) else {
+            return VDM::new();
+        };
 
         let actions_split = &actions[1].split("}");
 
