@@ -52,7 +52,7 @@ impl VDM {
         Err("Invalid file type")
     }
 
-    pub fn export(&self, file_path: &str) {
+    pub fn export(&self, file_path: impl AsRef<Path>) {
         let mut vdm_file = fs::File::create(file_path).unwrap();
         vdm_file.write_all(self.to_string().as_bytes()).unwrap();
     }
