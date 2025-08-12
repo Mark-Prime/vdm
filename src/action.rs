@@ -1,7 +1,7 @@
 use regex::{CaptureMatches, Regex};
 use std::fmt::{self, Display, Formatter, Write};
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum TextEffect {
     Flicker,
     FadeInOut,
@@ -10,17 +10,24 @@ pub enum TextEffect {
 
 impl Display for TextEffect {
     fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
-        write!(f, "{}", self.to_string())
+        let repr: &str = From::from(*self);
+        write!(f, "{repr}")
+    }
+}
+
+impl From<TextEffect> for &'static str {
+    fn from(text_effect: TextEffect) -> Self {
+        match text_effect {
+            TextEffect::Flicker => "FLICKER \"1\"",
+            TextEffect::FadeInOut => "FADEINOUT \"1\"",
+            TextEffect::WriteOut => "WRITEOUT \"1\"",
+        }
     }
 }
 
 impl From<TextEffect> for String {
     fn from(text_effect: TextEffect) -> Self {
-        match text_effect {
-            TextEffect::Flicker => "FLICKER \"1\"".to_string(),
-            TextEffect::FadeInOut => "FADEINOUT \"1\"".to_string(),
-            TextEffect::WriteOut => "WRITEOUT \"1\"".to_string(),
-        }
+        text_effect.to_string()
     }
 }
 
@@ -58,6 +65,12 @@ pub struct Properties {
     pub xy: [f64; 2],
     pub rgba1: [u8; 4],
     pub rgba2: [u8; 4],
+}
+
+impl Default for Properties {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl Properties {
@@ -390,41 +403,21 @@ impl Action {
 
     pub fn props(&self) -> Properties {
         match self {
-            Action::SkipAhead(props) => {
-                return props.clone();
-            }
-            Action::StopPlayback(props) => {
-                return props.clone();
-            }
-            Action::PlayCommands(props) => {
-                return props.clone();
-            }
-            Action::ScreenFadeStart(props) => {
-                return props.clone();
-            }
-            Action::TextMessageStart(props) => {
-                return props.clone();
-            }
-            Action::PlayCDTrackStart(props) => {
-                return props.clone();
-            }
-            Action::PlaySoundStart(props) => {
-                return props.clone();
-            }
-            Action::Pause(props) => {
-                return props.clone();
-            }
-            Action::ChangePlaybackRate(props) => {
-                return props.clone();
-            }
-            Action::ZoomFov(props) => {
-                return props.clone();
-            }
+            Action::SkipAhead(props) => props.clone(),
+            Action::StopPlayback(props) => props.clone(),
+            Action::PlayCommands(props) => props.clone(),
+            Action::ScreenFadeStart(props) => props.clone(),
+            Action::TextMessageStart(props) => props.clone(),
+            Action::PlayCDTrackStart(props) => props.clone(),
+            Action::PlaySoundStart(props) => props.clone(),
+            Action::Pause(props) => props.clone(),
+            Action::ChangePlaybackRate(props) => props.clone(),
+            Action::ZoomFov(props) => props.clone(),
         }
     }
 
     pub fn set_props(&mut self, new_props: Properties) -> Self {
-        return match self {
+        match self {
             Action::SkipAhead(_) => Action::SkipAhead(new_props),
             Action::StopPlayback(_) => Action::StopPlayback(new_props),
             Action::PlayCommands(_) => Action::PlayCommands(new_props),
@@ -435,7 +428,7 @@ impl Action {
             Action::Pause(_) => Action::Pause(new_props),
             Action::ChangePlaybackRate(_) => Action::ChangePlaybackRate(new_props),
             Action::ZoomFov(_) => Action::ZoomFov(new_props),
-        };
+        }
     }
 
     pub fn props_mut(&mut self) -> &mut Properties {
@@ -462,7 +455,7 @@ impl From<String> for Action {
 
         let factory = events.next().unwrap();
 
-        return match &factory[2] {
+        match &factory[2] {
             "SkipAhead" => Action::SkipAhead(Properties::from(events)),
             "StopPlayback" => Action::StopPlayback(Properties::from(events)),
             "PlayCommands" => Action::PlayCommands(Properties::from(events)),
@@ -477,398 +470,242 @@ impl From<String> for Action {
                 println!("{:?}", &factory[2]);
                 todo!();
             }
+        }
+    }
+}
+
+impl Display for Action {
+    fn fmt(&self, f: &mut Formatter<'_>) -> fmt::Result {
+        match self {
+            Action::SkipAhead(props) => {
+                write!(f, "\t\tfactory \"SkipAhead\"\r\n")?;
+
+                write!(f, "\t\tname \"{}\"\r\n", props.name)?;
+
+                if let Some(prop) = props.start_tick.as_ref() {
+                    write!(f, "\t\tstarttick \"{prop}\"\r\n",)?;
+                }
+
+                if let Some(prop) = props.start_time.as_ref() {
+                    write!(f, "\t\tstarttime \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.skip_to_tick.as_ref() {
+                    write!(f, "\t\tskiptotick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.skip_to_time.as_ref() {
+                    write!(f, "\t\tskiptotime \"{prop:.3}\"\r\n")?;
+                }
+            }
+            Action::StopPlayback(props) => {
+                write!(f, "\t\tfactory \"StopPlayback\"\r\n")?;
+
+                write!(f, "\t\tname \"{}\"\r\n", props.name)?;
+
+                if let Some(prop) = props.start_tick.as_ref() {
+                    write!(f, "\t\tstarttick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.start_time.as_ref() {
+                    write!(f, "\t\tstarttime \"{prop}\"\r\n")?;
+                }
+            }
+            Action::PlayCommands(props) => {
+                write!(f, "\t\tfactory \"PlayCommands\"\r\n")?;
+
+                write!(f, "\t\tname \"{}\"\r\n", props.name)?;
+
+                if let Some(prop) = props.start_tick.as_ref() {
+                    write!(f, "\t\tstarttick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.start_time.as_ref() {
+                    write!(f, "\t\tstarttime \"{prop}\"\r\n");
+                }
+
+                write!(f, "\t\tcommands \"{}\"\r\n", props.commands)?;
+            }
+            Action::ScreenFadeStart(props) => {
+                write!(f, "\t\tfactory \"ScreenFadeStart\"\r\n")?;
+
+                write!(f, "\t\tname \"{}\"\r\n", props.name)?;
+
+                if let Some(prop) = props.start_tick.as_ref() {
+                    write!(f, "\t\tstarttick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.start_time.as_ref() {
+                    write!(f, "\t\tstarttime \"{prop}\"\r\n")?;
+                }
+
+                write!(f, "\t\tduration \"{:.3}\"\r\n", props.duration)?;
+
+                write!(f, "\t\tholdtime \"{:.3}\"\r\n", props.hold_time)?;
+
+                if props.fade_in_enabled {
+                    write!(f, "\t\tFFADE_IN \"1\"\r\n")?;
+                }
+
+                if props.fade_out_enabled {
+                    write!(f, "\t\tFFADE_OUT \"1\"\r\n")?;
+                }
+
+                if props.modulate_enabled {
+                    write!(f, "\t\tFFADE_MODULATE \"1\"\r\n")?;
+                }
+
+                if props.stay_out_enabled {
+                    write!(f, "\t\tFFADE_STAYOUT \"1\"\r\n")?;
+                }
+
+                if props.purge_enabled {
+                    write!(f, "\t\tFFADE_PURGE \"1\"\r\n")?;
+                }
+
+                write!(f, "\t\tr \"{}\"\r\n", props.rgba1[0])?;
+                write!(f, "\t\tg \"{}\"\r\n", props.rgba1[1])?;
+                write!(f, "\t\tb \"{}\"\r\n", props.rgba1[2])?;
+                write!(f, "\t\ta \"{}\"\r\n", props.rgba1[3])?;
+            }
+            Action::TextMessageStart(props) => {
+                write!(f, "\t\tfactory \"TextMessageStart\"\r\n")?;
+
+                write!(f, "\t\tname \"{}\"\r\n", props.name)?;
+
+                if let Some(prop) = props.start_tick.as_ref() {
+                    write!(f, "\t\tstarttick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.start_time.as_ref() {
+                    write!(f, "\t\tstarttime \"{prop}\"\r\n")?;
+                }
+
+                write!(f, "\t\tmessage \"{}\"\r\n", props.message)?;
+                write!(f, "\t\tfont \"{}\"\r\n", props.font)?;
+                write!(f, "\t\tfadein \"{:.3}\"\r\n", props.fade_in)?;
+                write!(f, "\t\tfadeout \"{:.3}\"\r\n", props.fade_out)?;
+                write!(f, "\t\tholdtime \"{:.3}\"\r\n", props.hold_time)?;
+                write!(f, "\t\tfxtime \"{:.3}\"\r\n", props.fx_time)?;
+                write!(f, "\t\t{}\r\n", props.effect)?;
+
+                write!(f, "\t\tx \"{}\"\r\n", props.xy[0])?;
+                write!(f, "\t\ty \"{}\"\r\n", props.xy[1])?;
+
+                write!(f, "\t\tr1 \"{}\"\r\n", props.rgba1[0])?;
+                write!(f, "\t\tg1 \"{}\"\r\n", props.rgba1[1])?;
+                write!(f, "\t\tb1 \"{}\"\r\n", props.rgba1[2])?;
+                write!(f, "\t\ta1 \"{}\"\r\n", props.rgba1[3])?;
+
+                write!(f, "\t\tr2 \"{}\"\r\n", props.rgba2[0])?;
+                write!(f, "\t\tg2 \"{}\"\r\n", props.rgba2[1])?;
+                write!(f, "\t\tb2 \"{}\"\r\n", props.rgba2[2])?;
+                write!(f, "\t\ta2 \"{}\"\r\n", props.rgba2[3])?;
+            }
+            Action::PlayCDTrackStart(props) => {
+                write!(f, "\t\tfactory \"PlayCDTrackStart\"\r\n")?;
+
+                write!(f, "\t\tname \"{}\"\r\n", props.name)?;
+
+                if let Some(prop) = props.start_tick.as_ref() {
+                    write!(f, "\t\tstarttick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.start_time.as_ref() {
+                    write!(f, "\t\tstarttime \"{prop}\"\r\n")?;
+                }
+
+                write!(f, "\t\ttrack \"{}\"\r\n", props.track)?;
+            }
+            Action::PlaySoundStart(props) => {
+                write!(f, "\t\tfactory \"PlaySoundStart\"\r\n")?;
+
+                write!(f, "\t\tname \"{}\"\r\n", props.name)?;
+
+                if let Some(prop) = props.start_tick.as_ref() {
+                    write!(f, "\t\tstarttick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.start_time.as_ref() {
+                    write!(f, "\t\tstarttime \"{prop}\"\r\n")?;
+                }
+
+                write!(f, "\t\tsound \"{}\"\r\n", props.sound)?;
+            }
+            Action::Pause(props) => {
+                write!(f, "\t\tfactory \"Pause\"\r\n")?;
+
+                write!(f, "\t\tname \"{}\"\r\n", props.name)?;
+
+                if let Some(prop) = props.start_tick.as_ref() {
+                    write!(f, "\t\tstarttick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.start_time.as_ref() {
+                    write!(f, "\t\tstarttime \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.stop_tick.as_ref() {
+                    write!(f, "\t\tstoptick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.stop_time.as_ref() {
+                    write!(f, "\t\tstoptime \"{prop}\"\r\n")?;
+                }
+
+                write!(f, "\t\tpausetime \"{:.6}\"\r\n", props.duration)?;
+            }
+            Action::ChangePlaybackRate(props) => {
+                write!(f, "\t\tfactory \"ChangePlaybackRate\"\r\n")?;
+
+                write!(f, "\t\tname \"{}\"\r\n", props.name)?;
+
+                if let Some(prop) = props.start_tick.as_ref() {
+                    write!(f, "\t\tstarttick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.start_time.as_ref() {
+                    write!(f, "\t\tstarttime \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.stop_tick.as_ref() {
+                    write!(f, "\t\tstoptick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.stop_time.as_ref() {
+                    write!(f, "\t\tstoptime \"{prop}\"\r\n")?;
+                }
+
+                write!(f, "\t\tplaybackrate \"{:.6}\"\r\n", props.final_fov)?;
+            }
+            Action::ZoomFov(props) => {
+                write!(f, "\t\tfactory \"Zoom FOV\"\r\n")?;
+
+                write!(f, "\t\tname \"{}\"\r\n", props.name)?;
+
+                if let Some(prop) = props.start_tick.as_ref() {
+                    write!(f, "\t\tstarttick \"{prop}\"\r\n")?;
+                }
+
+                if let Some(prop) = props.start_time.as_ref() {
+                    write!(f, "\t\tstarttime \"{prop}\"\r\n")?;
+                }
+
+                write!(f, "\t\tspline \"{}\"\r\n", props.spline)?;
+                write!(f, "\t\tstayout \"{}\"\r\n", props.stayout)?;
+                write!(f, "\t\tfinalfov \"{:.6}\"\r\n", props.final_fov)?;
+                write!(f, "\t\tfovrateout \"{:.6}\"\r\n", props.fade_out)?;
+                write!(f, "\t\tfovratein \"{:.6}\"\r\n", props.fade_in)?;
+                write!(f, "\t\tfovhold \"{:.6}\"\r\n", props.hold_time)?;
+            }
         };
+
+        Ok(())
     }
 }
 
 impl From<Action> for String {
     fn from(action: Action) -> Self {
-        match action {
-            Action::SkipAhead(props) => {
-                let mut action_str = "\t\tfactory \"SkipAhead\"\r\n".to_string();
-
-                write!(&mut action_str, "\t\tname \"{}\"\r\n", props.name);
-
-                if props.start_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttick \"{}\"\r\n",
-                        props.start_tick.unwrap()
-                    );
-                }
-
-                if props.start_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttime \"{}\"\r\n",
-                        props.start_time.unwrap()
-                    );
-                }
-
-                if props.skip_to_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tskiptotick \"{}\"\r\n",
-                        props.skip_to_tick.unwrap()
-                    );
-                }
-
-                if props.skip_to_time.is_some() {
-                    action_str = format!(
-                        "{}\t\tskiptotime \"{:.3}\"\r\n",
-                        action_str,
-                        props.skip_to_time.unwrap()
-                    );
-                }
-
-                action_str
-            }
-            Action::StopPlayback(props) => {
-                let mut action_str = "\t\tfactory \"StopPlayback\"\r\n".to_string();
-
-                write!(&mut action_str, "\t\tname \"{}\"\r\n", props.name);
-
-                if props.start_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttick \"{}\"\r\n",
-                        props.start_tick.unwrap()
-                    );
-                }
-
-                if props.start_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttime \"{}\"\r\n",
-                        props.start_time.unwrap()
-                    );
-                }
-
-                action_str
-            }
-            Action::PlayCommands(props) => {
-                let mut action_str = "\t\tfactory \"PlayCommands\"\r\n".to_string();
-
-                write!(&mut action_str, "\t\tname \"{}\"\r\n", props.name);
-
-                if props.start_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttick \"{}\"\r\n",
-                        props.start_tick.unwrap()
-                    );
-                }
-
-                if props.start_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttime \"{}\"\r\n",
-                        props.start_time.unwrap()
-                    );
-                }
-
-                write!(
-                    &mut action_str,
-                    "\t\tcommands \"{}\"\r\n",
-                    props.commands
-                );
-
-                action_str
-            }
-            Action::ScreenFadeStart(props) => {
-                let mut action_str = "\t\tfactory \"ScreenFadeStart\"\r\n".to_string();
-
-                write!(&mut action_str, "\t\tname \"{}\"\r\n", props.name);
-
-                if props.start_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttick \"{}\"\r\n",
-                        props.start_tick.unwrap()
-                    );
-                }
-
-                if props.start_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttime \"{}\"\r\n",
-                        props.start_time.unwrap()
-                    );
-                }
-
-                write!(
-                    &mut action_str,
-                    "\t\tduration \"{:.3}\"\r\n",
-                    props.duration
-                );
-
-                write!(
-                    &mut action_str,
-                    "\t\tholdtime \"{:.3}\"\r\n",
-                    props.hold_time
-                );
-                
-                if props.fade_in_enabled {
-                    write!(&mut action_str, "\t\tFFADE_IN \"1\"\r\n");
-                }
-
-                if props.fade_out_enabled {
-                    write!(&mut action_str, "\t\tFFADE_OUT \"1\"\r\n");
-                }
-
-                if props.modulate_enabled {
-                    write!(&mut action_str, "\t\tFFADE_MODULATE \"1\"\r\n");
-                }
-
-                if props.stay_out_enabled {
-                    write!(&mut action_str, "\t\tFFADE_STAYOUT \"1\"\r\n");
-                }
-
-                if props.purge_enabled {
-                    write!(&mut action_str, "\t\tFFADE_PURGE \"1\"\r\n");
-                }
-
-                write!(&mut action_str, "\t\tr \"{}\"\r\n", props.rgba1[0]);
-                write!(&mut action_str, "\t\tg \"{}\"\r\n", props.rgba1[1]);
-                write!(&mut action_str, "\t\tb \"{}\"\r\n", props.rgba1[2]);
-                write!(&mut action_str, "\t\ta \"{}\"\r\n", props.rgba1[3]);
-
-                action_str
-            }
-            Action::TextMessageStart(props) => {
-                let mut action_str = "\t\tfactory \"TextMessageStart\"\r\n".to_string();
-
-                write!(&mut action_str, "\t\tname \"{}\"\r\n", props.name);
-
-                if props.start_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttick \"{}\"\r\n",
-                        props.start_tick.unwrap()
-                    );
-                }
-
-                if props.start_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttime \"{}\"\r\n",
-                        props.start_time.unwrap()
-                    );
-                }
-
-                write!(&mut action_str, "\t\tmessage \"{}\"\r\n", props.message);
-                write!(&mut action_str, "\t\tfont \"{}\"\r\n", props.font);
-                write!(&mut action_str, "\t\tfadein \"{:.3}\"\r\n", props.fade_in);
-                write!(&mut action_str, "\t\tfadeout \"{:.3}\"\r\n", props.fade_out);
-                write!(
-                    &mut action_str,
-                    "\t\tholdtime \"{:.3}\"\r\n",
-                    props.hold_time
-                );
-                write!(&mut action_str, "\t\tfxtime \"{:.3}\"\r\n", props.fx_time);
-                write!(&mut action_str, "\t\t{}\r\n", String::from(props.effect));
-
-                write!(&mut action_str, "\t\tx \"{}\"\r\n", props.xy[0]);
-                write!(&mut action_str, "\t\ty \"{}\"\r\n", props.xy[1]);
-
-                write!(&mut action_str, "\t\tr1 \"{}\"\r\n", props.rgba1[0]);
-                write!(&mut action_str, "\t\tg1 \"{}\"\r\n", props.rgba1[1]);
-                write!(&mut action_str, "\t\tb1 \"{}\"\r\n", props.rgba1[2]);
-                write!(&mut action_str, "\t\ta1 \"{}\"\r\n", props.rgba1[3]);
-
-                write!(&mut action_str, "\t\tr2 \"{}\"\r\n", props.rgba2[0]);
-                write!(&mut action_str, "\t\tg2 \"{}\"\r\n", props.rgba2[1]);
-                write!(&mut action_str, "\t\tb2 \"{}\"\r\n", props.rgba2[2]);
-                write!(&mut action_str, "\t\ta2 \"{}\"\r\n", props.rgba2[3]);
-
-                action_str
-            }
-            Action::PlayCDTrackStart(props) => {
-                let mut action_str = "\t\tfactory \"PlayCDTrackStart\"\r\n".to_string();
-
-                write!(&mut action_str, "\t\tname \"{}\"\r\n", props.name);
-
-                if props.start_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttick \"{}\"\r\n",
-                        props.start_tick.unwrap()
-                    );
-                }
-
-                if props.start_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttime \"{}\"\r\n",
-                        props.start_time.unwrap()
-                    );
-                }
-
-                write!(&mut action_str, "\t\ttrack \"{}\"\r\n", props.track);
-
-                action_str
-            }
-            Action::PlaySoundStart(props) => {
-                let mut action_str = "\t\tfactory \"PlaySoundStart\"\r\n".to_string();
-
-                write!(&mut action_str, "\t\tname \"{}\"\r\n", props.name);
-
-                if props.start_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttick \"{}\"\r\n",
-                        props.start_tick.unwrap()
-                    );
-                }
-
-                if props.start_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttime \"{}\"\r\n",
-                        props.start_time.unwrap()
-                    );
-                }
-
-                write!(&mut action_str, "\t\tsound \"{}\"\r\n", props.sound);
-
-                action_str
-            }
-            Action::Pause(props) => {
-                let mut action_str = "\t\tfactory \"Pause\"\r\n".to_string();
-
-                write!(&mut action_str, "\t\tname \"{}\"\r\n", props.name);
-
-                if props.start_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttick \"{}\"\r\n",
-                        props.start_tick.unwrap()
-                    );
-                }
-
-                if props.start_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttime \"{}\"\r\n",
-                        props.start_time.unwrap()
-                    );
-                }
-
-                if props.stop_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstoptick \"{}\"\r\n",
-                        props.stop_tick.unwrap()
-                    );
-                }
-
-                if props.stop_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstoptime \"{}\"\r\n",
-                        props.stop_time.unwrap()
-                    );
-                }
-
-                write!(
-                    &mut action_str,
-                    "\t\tpausetime \"{:.6}\"\r\n",
-                    props.duration
-                );
-
-                action_str
-            }
-            Action::ChangePlaybackRate(props) => {
-                let mut action_str = "\t\tfactory \"ChangePlaybackRate\"\r\n".to_string();
-
-                write!(&mut action_str, "\t\tname \"{}\"\r\n", props.name);
-
-                if props.start_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttick \"{}\"\r\n",
-                        props.start_tick.unwrap()
-                    );
-                }
-
-                if props.start_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttime \"{}\"\r\n",
-                        props.start_time.unwrap()
-                    );
-                }
-
-                if props.stop_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstoptick \"{}\"\r\n",
-                        props.stop_tick.unwrap()
-                    );
-                }
-
-                if props.stop_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstoptime \"{}\"\r\n",
-                        props.stop_time.unwrap()
-                    );
-                }
-
-                write!(
-                    &mut action_str,
-                    "\t\tplaybackrate \"{:.6}\"\r\n",
-                    props.final_fov
-                );
-
-                action_str
-            }
-            Action::ZoomFov(props) => {
-                let mut action_str = "\t\tfactory \"Zoom FOV\"\r\n".to_string();
-
-                write!(&mut action_str, "\t\tname \"{}\"\r\n", props.name);
-
-                if props.start_tick.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttick \"{}\"\r\n",
-                        props.start_tick.unwrap()
-                    );
-                }
-
-                if props.start_time.is_some() {
-                    write!(
-                        &mut action_str,
-                        "\t\tstarttime \"{}\"\r\n",
-                        props.start_time.unwrap()
-                    );
-                }
-
-                write!(&mut action_str, "\t\tspline \"{}\"\r\n", props.spline);
-                write!(&mut action_str, "\t\tstayout \"{}\"\r\n", props.stayout);
-                write!(
-                    &mut action_str,
-                    "\t\tfinalfov \"{:.6}\"\r\n",
-                    props.final_fov
-                );
-                write!(
-                    &mut action_str,
-                    "\t\tfovrateout \"{:.6}\"\r\n",
-                    props.fade_out
-                );
-                write!(
-                    &mut action_str,
-                    "\t\tfovratein \"{:.6}\"\r\n",
-                    props.fade_in
-                );
-                write!(
-                    &mut action_str,
-                    "\t\tfovhold \"{:.6}\"\r\n",
-                    props.hold_time
-                );
-
-                action_str
-            }
-        }
+        action.to_string()
     }
 }
