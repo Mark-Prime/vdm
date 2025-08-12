@@ -676,7 +676,7 @@ impl Display for Action {
                     write!(f, "\t\tstoptime \"{prop}\"\r\n")?;
                 }
 
-                write!(f, "\t\tplaybackrate \"{:.6}\"\r\n", props.final_fov)?;
+                write!(f, "\t\tplaybackrate \"{:.6}\"\r\n", props.playback_rate)?;
             }
             Action::ZoomFov(props) => {
                 write!(f, "\t\tfactory \"Zoom FOV\"\r\n")?;
