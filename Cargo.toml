@@ -7,5 +7,15 @@ license = "MIT OR Apache-2.0"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
+[features]
+default = []
+generate_test_file = []
+
+[[bin]]
+name = "generate_test_file"
+required-features = ["generate_test_file"]
+path = "src/tests/generate.rs"
+
 [dependencies]
 regex = "1"
+
