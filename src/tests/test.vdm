@@ -1,0 +1,18 @@
+demoactions
+{
+	"1"
+	{
+		factory "Pause"
+		name "Unnamed"
+		starttick "1200"
+		pausetime "5.000000"
+	}
+	"2"
+	{
+		factory "ChangePlaybackRate"
+		name "testrate"
+		starttick "6400"
+		stoptick "12800"
+		playbackrate "2.000000"
+	}
+}

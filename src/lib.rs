@@ -1,5 +1,7 @@
 #![allow(unused)] // Make it stop!
 pub mod action;
+#[cfg(test)]
+mod tests;
 
 use action::{Action, ActionType, Properties};
 use regex::Regex;
